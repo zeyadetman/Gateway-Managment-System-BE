@@ -1,15 +1,17 @@
-import express, { Express, Request, Response } from "express";
-import dotenv from "dotenv";
+import express, { Express } from "express";
+import config from "./config";
 
-dotenv.config();
+async function startServer() {
+  const app: Express = express();
 
-const app: Express = express();
-const port = process.env.PORT;
+  /* eslint @typescript-eslint/no-var-requires: "off" */
+  await require("./loaders").default({ expressApp: app });
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Express + TypeScript Server");
-});
+  app.listen(config.port, () => {
+    console.log(
+      `⚡️[server]: Server is running at https://localhost:${config.port}`
+    );
+  });
+}
 
-app.listen(port, () => {
-  console.log(`⚡️[server]: Server is running at https://localhost:${port}`);
-});
+startServer();
