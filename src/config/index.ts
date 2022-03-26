@@ -7,4 +7,7 @@ export default {
   api: {
     prefix: "/api",
   },
+  db: {
+    uri: process.env.DB_URI || "mongodb://localhost/test",
+  },
 };
