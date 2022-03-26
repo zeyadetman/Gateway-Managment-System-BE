@@ -17,7 +17,11 @@ const DeviceSchema: Schema = new mongoose.Schema(
       enum: ["online", "offline"],
       default: "offline",
     },
-    gateway: { type: mongoose.Schema.Types.ObjectId, ref: "Gateway" },
+    gatewaySerialNumber: {
+      type: mongoose.Schema.Types.String,
+      ref: "Gateway",
+      required: true,
+    },
   },
   {
     timestamps: true,

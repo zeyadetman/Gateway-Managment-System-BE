@@ -8,6 +8,7 @@ export interface IDevice {
 }
 
 export interface IDeviceInputDTO {
+  uid: number;
   vendor: string;
   status: "online" | "offline";
   gatewaySerialNumber: string;
