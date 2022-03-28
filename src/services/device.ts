@@ -48,14 +48,12 @@ export default class Device {
 
   async getDeviceById(id: string) {
     try {
-      const { error, value } = deviceValidationSchema
-        .extract("uid")
-        .validate(id);
+      const { error } = deviceValidationSchema.extract("uid").validate(id);
       if (error?.message) {
         throw new Error(error.message);
       }
 
-      const res = await DeviceModel.findOne({ uid: id });
+      const res = await DeviceModel.findOne({ uid: id }, { __v: 0 });
       return res?.toJSON();
     } catch (error: any) {
       throw new Error(error);
@@ -65,32 +63,68 @@ export default class Device {
   async getAllDevices(page: number, limit: number) {
     try {
       const count = await DeviceModel.countDocuments();
-      const res = await DeviceModel.find()
-        .sort({
-          name: "asc",
-        })
-        .skip((page - 1) * limit)
-        .limit(limit);
-      const data = res.map((device) => device.toJSON());
+      const data = await DeviceModel.aggregate([
+        { $sort: { createdAt: -1 } },
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+        { $project: { __v: 0 } },
+      ]);
+
       return { data, count, page: Number(page), limit: Number(limit) };
     } catch (error: any) {
       throw new Error(error);
     }
   }
 
-  async getDevicesByGatewayId() {}
-  async updateDeviceById() {}
-  async deleteDeviceById(uid: string) {
+  async getDevicesByGatewayId(gatewayId: string) {
     try {
-      const { error, value } = deviceValidationSchema
-        .extract("uid")
-        .validate(uid);
+      const { error } = deviceValidationSchema
+        .extract("gatewaySerialNumber")
+        .validate(gatewayId);
       if (error?.message) {
         throw new Error(error.message);
       }
 
-      await DeviceModel.findOneAndDelete({ uid });
-      return true;
+      const gateway = await gatewayInstance.getGatewayBySerialNumber(gatewayId);
+      if (!gateway) {
+        throw new Error("Gateway not found");
+      }
+
+      const [devices] = await GatewayModel.aggregate([
+        { $match: { serialnumber: gatewayId } },
+        { $project: { devices: 1, _id: 0 } },
+        {
+          $lookup: {
+            from: "devices",
+            localField: "devices",
+            foreignField: "_id",
+            as: "devices",
+          },
+        },
+      ]);
+
+      return devices;
+    } catch (error: any) {
+      throw new Error(error);
+    }
+  }
+
+  async updateDeviceById() {}
+
+  async deleteDeviceById(uid: string) {
+    try {
+      const { error } = deviceValidationSchema.extract("uid").validate(uid);
+      if (error?.message) {
+        throw new Error(error.message);
+      }
+
+      const device = await DeviceModel.findOne({ uid });
+      if (!device) {
+        throw new Error("Device not found");
+      }
+
+      const res = await DeviceModel.findOneAndDelete({ uid });
+      return res ? true : true;
     } catch (error: any) {
       throw new Error(error);
     }

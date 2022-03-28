@@ -19,15 +19,29 @@ export default class Gateway {
 
   async getGatewayBySerialNumber(serialnumber: string) {
     try {
-      const { error, value } = gatewayValidationSchema
+      const { error } = gatewayValidationSchema
         .extract("serialnumber")
         .validate(serialnumber);
       if (error?.message) {
         throw new Error(error.message);
       }
 
-      const res = await GatewayModel.findOne({ serialnumber: value });
-      return res?.toJSON();
+      const [res] = await GatewayModel.aggregate([
+        { $match: { serialnumber: serialnumber } },
+        { $limit: 1 },
+        {
+          $lookup: {
+            from: "devices",
+            localField: "devices",
+            foreignField: "_id",
+            as: "devices",
+            pipeline: [{ $project: { __v: 0 } }],
+          },
+        },
+        { $project: { __v: 0 } },
+      ]);
+
+      return res;
     } catch (error: any) {
       throw new Error(error);
     }
@@ -36,13 +50,22 @@ export default class Gateway {
   async getAllGateways(page: number, limit: number) {
     try {
       const count = await GatewayModel.countDocuments();
-      const res = await GatewayModel.find()
-        .sort({
-          name: "asc",
-        })
-        .skip((page - 1) * limit)
-        .limit(limit);
-      const data = res.map((gateway) => gateway.toJSON());
+      const data = await GatewayModel.aggregate([
+        { $sort: { createdAt: -1 } },
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: "devices",
+            localField: "devices",
+            foreignField: "_id",
+            as: "devices",
+            pipeline: [{ $project: { __v: 0 } }],
+          },
+        },
+        { $project: { __v: 0 } },
+      ]);
+
       return { data, count, page: Number(page), limit: Number(limit) };
     } catch (error: any) {
       throw new Error(error);

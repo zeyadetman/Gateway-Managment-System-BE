@@ -47,7 +47,7 @@ export default (app: Router) => {
     try {
       const { id } = req.params;
       await deviceInstance.deleteDeviceById(id);
-      return true;
+      return res.status(200).json({ message: "Removed Successfully" });
     } catch (error: any) {
       return next(error);
     }
@@ -66,8 +66,13 @@ export default (app: Router) => {
   });
 
   // Get all devices by gateway id
-  devicesRoute.get("/:id", (req, res) => {
-    const { id } = req.params;
-    res.send("Get devices by gatway id!" + id);
+  devicesRoute.get("/:id", async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const response = await deviceInstance.getDevicesByGatewayId(id);
+      res.status(200).json(response);
+    } catch (error: any) {
+      return next(error);
+    }
   });
 };
