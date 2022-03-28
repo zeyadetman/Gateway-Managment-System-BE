@@ -1,5 +1,8 @@
 import { IDevice, IDeviceInputDTO } from "../interfaces/IDevice";
-import { deviceValidationSchema } from "../validations/device";
+import {
+  deviceDTOValidationSchema,
+  deviceValidationSchema,
+} from "../validations/device";
 import DeviceModel from "../models/Device";
 import GatewayModel from "../models/Gateway";
 import Gateway from "./gateway";
@@ -21,6 +24,11 @@ export default class Device {
         return next({ status: 404, message: "Gateway not found" });
       }
 
+      const device = await DeviceModel.find({ uid: body.uid });
+      if (device.length > 0) {
+        throw new Error("Device already exists");
+      }
+
       const res = await DeviceModel.create(value);
       const jsonRes = res?.toJSON();
       this.assignDeviceToGateway(jsonRes, value.gatewaySerialNumber);
@@ -30,8 +38,24 @@ export default class Device {
     }
   }
 
+  async removeDeviceFromGateway(device: IDevice) {
+    if (device.gatewaySerialNumber) {
+      const gateway = await GatewayModel.findOne({
+        serialnumber: device.gatewaySerialNumber,
+      });
+      if (!gateway) {
+        throw new Error("Gateway not found");
+      }
+
+      await gateway.updateOne({
+        $pull: { devices: device._id },
+      });
+    }
+  }
+
   async assignDeviceToGateway(device: IDevice, gatewaySerialNumber: string) {
     try {
+      await this.removeDeviceFromGateway(device);
       const gateway = await GatewayModel.findOne({
         serialnumber: gatewaySerialNumber,
       });
@@ -39,6 +63,10 @@ export default class Device {
         throw new Error("Gateway not found");
       }
 
+      await DeviceModel.updateOne(
+        { uid: device.uid },
+        { $set: { gatewaySerialNumber: gateway.serialnumber } }
+      );
       await gateway.updateOne({ devices: [...gateway.devices, device] });
       return true;
     } catch (error: any) {
@@ -109,7 +137,41 @@ export default class Device {
     }
   }
 
-  async updateDeviceById() {}
+  async updateDeviceById(id: string, body: IDeviceInputDTO) {
+    try {
+      const { error } = deviceDTOValidationSchema.validate(body);
+      if (error?.message) {
+        throw new Error(error.message);
+      }
+
+      const device = await DeviceModel.findOne({ uid: id });
+      if (!device) {
+        throw new Error("Device not found");
+      }
+
+      const { vendor, status, gatewaySerialNumber } = body;
+
+      if (device.gatewaySerialNumber !== gatewaySerialNumber) {
+        await this.assignDeviceToGateway(device, gatewaySerialNumber);
+      }
+
+      const res = await DeviceModel.findOneAndUpdate(
+        { uid: id },
+        {
+          $set: {
+            vendor: vendor || device.vendor,
+            status: status || device.status,
+            gatewaySerialNumber:
+              gatewaySerialNumber || device.gatewaySerialNumber,
+          },
+        },
+        { new: true }
+      );
+      return res ? res.toJSON() : true;
+    } catch (error: any) {
+      throw new Error(error);
+    }
+  }
 
   async deleteDeviceById(uid: string) {
     try {
@@ -123,6 +185,7 @@ export default class Device {
         throw new Error("Device not found");
       }
 
+      await this.removeDeviceFromGateway(device);
       const res = await DeviceModel.findOneAndDelete({ uid });
       return res ? true : true;
     } catch (error: any) {

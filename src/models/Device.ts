@@ -14,8 +14,11 @@ const DeviceSchema: Schema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["online", "offline"],
-      default: "offline",
+      enum: {
+        values: ["online", "offline"],
+        message: "Invalid status",
+        default: "offline",
+      },
     },
     gatewaySerialNumber: {
       type: mongoose.Schema.Types.String,

@@ -37,9 +37,17 @@ export default (app: Router) => {
   });
 
   // Update device by id
-  deviceRoute.patch("/:id", (req, res) => {
-    const { id } = req.params;
-    res.send("Update device!" + id);
+  deviceRoute.patch("/:id", async (req, res, next) => {
+    try {
+      const {
+        params: { id },
+        body,
+      } = req;
+      const response = await deviceInstance.updateDeviceById(id, body);
+      res.status(200).json(response);
+    } catch (error: any) {
+      return next(error);
+    }
   });
 
   // Delete device by id

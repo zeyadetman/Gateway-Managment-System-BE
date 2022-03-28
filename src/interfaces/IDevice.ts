@@ -1,4 +1,5 @@
 export interface IDevice {
+  _id: string;
   uid: number;
   vendor: string;
   createdAt: Date;

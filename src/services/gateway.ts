@@ -10,6 +10,11 @@ export default class Gateway {
         throw new Error(error.message);
       }
 
+      const data = await GatewayModel.find({ serialnumber: body.serialnumber });
+      if (data.length > 0) {
+        throw new Error("Gateway already exists");
+      }
+
       const res = await GatewayModel.create(value);
       return res.toJSON();
     } catch (error: any) {
