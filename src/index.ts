@@ -1,9 +1,8 @@
 import express, { Express } from "express";
 import config from "./config";
 
+const app: Express = express();
 async function startServer() {
-  const app: Express = express();
-
   /* eslint @typescript-eslint/no-var-requires: "off" */
   await require("./loaders").default({ expressApp: app });
 
@@ -15,3 +14,4 @@ async function startServer() {
 }
 
 startServer();
+export default app;
