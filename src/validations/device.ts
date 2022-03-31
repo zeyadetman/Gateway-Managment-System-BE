@@ -8,6 +8,7 @@ export const deviceValidationSchema: Schema = Joi.object({
 });
 
 export const deviceDTOValidationSchema: Schema = Joi.object({
+  uid: Joi.number(),
   vendor: Joi.string(),
   status: Joi.string().valid("online", "offline").default("offline"),
   gatewaySerialNumber: Joi.string(),

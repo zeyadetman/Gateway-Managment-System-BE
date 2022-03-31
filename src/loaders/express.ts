@@ -31,7 +31,7 @@ export default ({ app }: { app: express.Application }) => {
       }
 
       return res
-        .status(err.status || 500)
+        .status(err.status || 400)
         .json({
           errors: {
             message: err.message,
