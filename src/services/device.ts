@@ -14,19 +14,24 @@ export default class Device {
     try {
       const { error, value } = deviceValidationSchema.validate(body);
       if (error?.message) {
-        throw new Error(error.message);
+        throw error.message;
       }
 
       const gateway = await gatewayInstance.getGatewayBySerialNumber(
         value.gatewaySerialNumber
       );
+
       if (!gateway && next) {
         return next({ status: 404, message: "Gateway not found" });
       }
 
+      if (gateway.devices.length >= 10) {
+        throw "Cannot Add more devices to this gateway!";
+      }
+
       const device = await DeviceModel.find({ uid: body.uid });
       if (device.length > 0) {
-        throw new Error("Device already exists");
+        throw "Device already exists";
       }
 
       const res = await DeviceModel.create(value);
@@ -59,11 +64,11 @@ export default class Device {
         serialnumber: gatewaySerialNumber,
       });
       if (!gateway) {
-        throw new Error("Gateway not found");
+        throw "Gateway not found";
       }
 
       if (gateway.devices.length >= 10) {
-        throw new Error("Cannot Add more devices to this gateway!");
+        throw "Cannot Add more devices to this gateway!";
       }
 
       await this.removeDeviceFromGateway(device);
@@ -145,12 +150,12 @@ export default class Device {
     try {
       const { error } = deviceDTOValidationSchema.validate(body);
       if (error?.message) {
-        throw new Error(error.message);
+        throw error.message;
       }
 
       const device = await DeviceModel.findOne({ uid: id });
       if (!device) {
-        throw new Error("Device not found");
+        throw "Device not found";
       }
 
       const { vendor, status, gatewaySerialNumber } = body;
