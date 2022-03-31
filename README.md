@@ -14,3 +14,7 @@ This project uses MongoDB as a database.
 ### Documentation and Preview
 
 see this file: Gateway Device Manager.postman_collection.json
+
+### Client side
+
+The Frontend for this app is built using ReactJS, [The Repository for the frontend is here.](https://github.com/zeyadetman/Gateway-Managment-System-FE)
