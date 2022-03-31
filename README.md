@@ -2,7 +2,7 @@
 
 This project uses MongoDB as a database.
 
-### Deployment
+### Deployment (CI/CD)
 
 - Heroku. _See Documentation and Preview to see the deployed link_
 
