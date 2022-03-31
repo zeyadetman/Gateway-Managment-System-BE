@@ -55,7 +55,6 @@ export default class Device {
 
   async assignDeviceToGateway(device: IDevice, gatewaySerialNumber: string) {
     try {
-      await this.removeDeviceFromGateway(device);
       const gateway = await GatewayModel.findOne({
         serialnumber: gatewaySerialNumber,
       });
@@ -63,6 +62,11 @@ export default class Device {
         throw new Error("Gateway not found");
       }
 
+      if (gateway.devices.length >= 10) {
+        throw new Error("Cannot Add more devices to this gateway!");
+      }
+
+      await this.removeDeviceFromGateway(device);
       await DeviceModel.updateOne(
         { uid: device.uid },
         { $set: { gatewaySerialNumber: gateway.serialnumber } }
